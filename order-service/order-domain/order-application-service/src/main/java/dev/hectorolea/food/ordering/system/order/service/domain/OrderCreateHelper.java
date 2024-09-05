@@ -13,8 +13,6 @@ import dev.hectorolea.food.ordering.system.order.service.domain.mapper.OrderData
 import dev.hectorolea.food.ordering.system.order.service.domain.ports.output.repository.CustomerRepository;
 import dev.hectorolea.food.ordering.system.order.service.domain.ports.output.repository.OrderRepository;
 import dev.hectorolea.food.ordering.system.order.service.domain.ports.output.repository.RestaurantRepository;
-
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;

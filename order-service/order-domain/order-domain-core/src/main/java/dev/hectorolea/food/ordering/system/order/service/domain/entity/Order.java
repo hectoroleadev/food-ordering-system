@@ -6,7 +6,11 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 
 import dev.hectorolea.food.ordering.system.domain.entity.AggregateRoot;
-import dev.hectorolea.food.ordering.system.domain.valueobject.*;
+import dev.hectorolea.food.ordering.system.domain.valueobject.CustomerId;
+import dev.hectorolea.food.ordering.system.domain.valueobject.Money;
+import dev.hectorolea.food.ordering.system.domain.valueobject.OrderId;
+import dev.hectorolea.food.ordering.system.domain.valueobject.OrderStatus;
+import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantId;
 import dev.hectorolea.food.ordering.system.order.service.domain.exception.OrderDomainException;
 import dev.hectorolea.food.ordering.system.order.service.domain.valueobject.OrderItemId;
 import dev.hectorolea.food.ordering.system.order.service.domain.valueobject.StreetAddress;
@@ -23,6 +27,8 @@ public class Order extends AggregateRoot<OrderId> {
   private TrackingId trackingId;
   private OrderStatus orderStatus;
   private List<String> failureMessages;
+
+  public static final String FAILURE_MESSAGE_DELIMITER = ",";
 
   public void initializeOrder() {
     setId(new OrderId(randomUUID()));

@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import static java.lang.String.format;
+
 @Slf4j
 @Component
 public class OrderTrackCommandHandler {
@@ -33,7 +35,8 @@ public class OrderTrackCommandHandler {
     if (orderResult.isEmpty()) {
       log.warn("Could not find order with tracking id: {}", trackOrderQuery.getOrderTrackingId());
       throw new OrderNotFoundException(
-          "Could not find order with tracking id: " + trackOrderQuery.getOrderTrackingId());
+          format(
+              "Could not find order with tracking id: %s", trackOrderQuery.getOrderTrackingId()));
     }
     return orderDataMapper.orderToTrackOrderResponse(orderResult.get());
   }

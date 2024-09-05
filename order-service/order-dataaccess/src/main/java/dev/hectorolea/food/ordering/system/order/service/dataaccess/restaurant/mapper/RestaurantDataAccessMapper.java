@@ -1,0 +1,47 @@
+package dev.hectorolea.food.ordering.system.order.service.dataaccess.restaurant.mapper;
+
+import static java.util.stream.Collectors.toList;
+
+import dev.hectorolea.food.ordering.system.dataaccess.restaurant.entity.RestaurantEntity;
+import dev.hectorolea.food.ordering.system.dataaccess.restaurant.exception.RestaurantDataAccessException;
+import dev.hectorolea.food.ordering.system.domain.valueobject.Money;
+import dev.hectorolea.food.ordering.system.domain.valueobject.ProductId;
+import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantId;
+import dev.hectorolea.food.ordering.system.order.service.domain.entity.Product;
+import dev.hectorolea.food.ordering.system.order.service.domain.entity.Restaurant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.stereotype.Component;
+
+@Component
+public class RestaurantDataAccessMapper {
+
+  public List<UUID> restaurantToRestaurantProducts(Restaurant restaurant) {
+    return restaurant.getProducts().stream()
+        .map(product -> product.getId().getValue())
+        .collect(toList());
+  }
+
+  public Restaurant restaurantEntityToRestaurant(List<RestaurantEntity> restaurantEntities) {
+    RestaurantEntity restaurantEntity =
+        restaurantEntities.stream()
+            .findFirst()
+            .orElseThrow(() -> new RestaurantDataAccessException("Restaurant could not be found!"));
+
+    List<Product> restaurantProducts =
+        restaurantEntities.stream()
+            .map(
+                entity ->
+                    new Product(
+                        new ProductId(entity.getProductId()),
+                        entity.getProductName(),
+                        new Money(entity.getProductPrice())))
+            .toList();
+
+    return Restaurant.builder()
+        .restaurantId(new RestaurantId(restaurantEntity.getRestaurantId()))
+        .products(restaurantProducts)
+        .isActive(restaurantEntity.getRestaurantActive())
+        .build();
+  }
+}
