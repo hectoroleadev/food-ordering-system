@@ -1,5 +1,6 @@
 package dev.hectorolea.food.ordering.system.order.service.dataaccess.order.adapter;
 
+import dev.hectorolea.food.ordering.system.domain.valueobject.OrderId;
 import dev.hectorolea.food.ordering.system.order.service.dataaccess.order.mapper.OrderDataAccessMapper;
 import dev.hectorolea.food.ordering.system.order.service.dataaccess.order.repository.OrderJpaRepository;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.Order;
@@ -30,6 +31,13 @@ public class OrderRepositoryImpl implements OrderRepository {
   public Optional<Order> findByTrackingId(TrackingId trackingId) {
     return orderJpaRepository
         .findByTrackingId(trackingId.getValue())
+        .map(orderDataAccessMapper::orderEntityToOrder);
+  }
+
+  @Override
+  public Optional<Order> findById(OrderId orderId) {
+    return orderJpaRepository
+        .findById(orderId.getValue())
         .map(orderDataAccessMapper::orderEntityToOrder);
   }
 }
