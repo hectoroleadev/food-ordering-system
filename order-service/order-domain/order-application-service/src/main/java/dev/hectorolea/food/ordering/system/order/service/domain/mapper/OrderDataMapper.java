@@ -5,8 +5,10 @@ import static java.util.stream.Collectors.toList;
 
 import dev.hectorolea.food.ordering.system.domain.valueobject.CustomerId;
 import dev.hectorolea.food.ordering.system.domain.valueobject.Money;
+import dev.hectorolea.food.ordering.system.domain.valueobject.PaymentOrderStatus;
 import dev.hectorolea.food.ordering.system.domain.valueobject.ProductId;
 import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantId;
+import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantOrderStatus;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.CreateOrderCommand;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.CreateOrderResponse;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.OrderAddress;
@@ -15,6 +17,12 @@ import dev.hectorolea.food.ordering.system.order.service.domain.entity.Order;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.OrderItem;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.Product;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.Restaurant;
+import dev.hectorolea.food.ordering.system.order.service.domain.event.OrderCancelledEvent;
+import dev.hectorolea.food.ordering.system.order.service.domain.event.OrderCreatedEvent;
+import dev.hectorolea.food.ordering.system.order.service.domain.event.OrderPaidEvent;
+import dev.hectorolea.food.ordering.system.order.service.domain.outbox.model.approval.OrderApprovalEventPayload;
+import dev.hectorolea.food.ordering.system.order.service.domain.outbox.model.approval.OrderApprovalEventProduct;
+import dev.hectorolea.food.ordering.system.order.service.domain.outbox.model.payment.OrderPaymentEventPayload;
 import dev.hectorolea.food.ordering.system.order.service.domain.valueobject.StreetAddress;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -44,7 +52,7 @@ public class OrderDataMapper {
 
   public CreateOrderResponse orderToCreateOrderResponse(Order order, String message) {
     return CreateOrderResponse.builder()
-        .orderTackingId(order.getTrackingId().getValue())
+        .orderTrackingId(order.getTrackingId().getValue())
         .orderStatus(order.getOrderStatus())
         .message(message)
         .build();
@@ -55,6 +63,48 @@ public class OrderDataMapper {
         .orderTrackingId(order.getTrackingId().getValue())
         .orderStatus(order.getOrderStatus())
         .failureMessages(order.getFailureMessages())
+        .build();
+  }
+
+  public OrderPaymentEventPayload orderCreatedEventToOrderPaymentEventPayload(
+      OrderCreatedEvent orderCreatedEvent) {
+    return OrderPaymentEventPayload.builder()
+        .customerId(orderCreatedEvent.getOrder().getCustomerId().getValue().toString())
+        .orderId(orderCreatedEvent.getOrder().getId().getValue().toString())
+        .price(orderCreatedEvent.getOrder().getPrice().getAmount())
+        .createdAt(orderCreatedEvent.getCreatedAt())
+        .paymentOrderStatus(PaymentOrderStatus.PENDING.name())
+        .build();
+  }
+
+  public OrderPaymentEventPayload orderCancelledEventToOrderPaymentEventPayload(
+      OrderCancelledEvent orderCancelledEvent) {
+    return OrderPaymentEventPayload.builder()
+        .customerId(orderCancelledEvent.getOrder().getCustomerId().getValue().toString())
+        .orderId(orderCancelledEvent.getOrder().getId().getValue().toString())
+        .price(orderCancelledEvent.getOrder().getPrice().getAmount())
+        .createdAt(orderCancelledEvent.getCreatedAt())
+        .paymentOrderStatus(PaymentOrderStatus.CANCELLED.name())
+        .build();
+  }
+
+  public OrderApprovalEventPayload orderPaidEventToOrderApprovalEventPayload(
+      OrderPaidEvent orderPaidEvent) {
+    return OrderApprovalEventPayload.builder()
+        .orderId(orderPaidEvent.getOrder().getId().getValue().toString())
+        .restaurantId(orderPaidEvent.getOrder().getRestaurantId().getValue().toString())
+        .restaurantOrderStatus(RestaurantOrderStatus.PAID.name())
+        .products(
+            orderPaidEvent.getOrder().getItems().stream()
+                .map(
+                    orderItem ->
+                        OrderApprovalEventProduct.builder()
+                            .id(orderItem.getProduct().getId().getValue().toString())
+                            .quantity(orderItem.getQuantity())
+                            .build())
+                .collect(toList()))
+        .price(orderPaidEvent.getOrder().getPrice().getAmount())
+        .createdAt(orderPaidEvent.getCreatedAt())
         .build();
   }
 

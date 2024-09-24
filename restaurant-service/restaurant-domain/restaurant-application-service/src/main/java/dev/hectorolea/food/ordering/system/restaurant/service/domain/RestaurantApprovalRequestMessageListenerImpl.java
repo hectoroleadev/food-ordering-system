@@ -1,7 +1,6 @@
 package dev.hectorolea.food.ordering.system.restaurant.service.domain;
 
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.dto.RestaurantApprovalRequest;
-import dev.hectorolea.food.ordering.system.restaurant.service.domain.event.OrderApprovalEvent;
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.ports.input.message.listener.RestaurantApprovalRequestMessageListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,8 +19,6 @@ public class RestaurantApprovalRequestMessageListenerImpl
 
   @Override
   public void approveOrder(RestaurantApprovalRequest restaurantApprovalRequest) {
-    OrderApprovalEvent orderApprovalEvent =
-        restaurantApprovalRequestHelper.persistOrderApproval(restaurantApprovalRequest);
-    orderApprovalEvent.fire();
+    restaurantApprovalRequestHelper.persistOrderApproval(restaurantApprovalRequest);
   }
 }

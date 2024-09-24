@@ -1,5 +1,3 @@
 package dev.hectorolea.food.ordering.system.domain.event;
 
-public interface DomainEvent<T> {
-  void fire();
-}
+public interface DomainEvent<T> {}

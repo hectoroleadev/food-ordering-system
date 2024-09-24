@@ -1,5 +1,10 @@
 package dev.hectorolea.food.ordering.system.kafka.producer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.hectorolea.food.ordering.system.order.service.domain.exception.OrderDomainException;
+import dev.hectorolea.food.ordering.system.outbox.OutboxStatus;
+import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.kafka.support.SendResult;
@@ -10,17 +15,39 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 @Component
 public class KafkaMessageHelper {
 
-  public <T> ListenableFutureCallback<SendResult<String, T>> getKafkaCallback(
-      String responseTopicName, T avroModel, String orderId, String avroModelName) {
+  private final ObjectMapper objectMapper;
+
+  public KafkaMessageHelper(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
+
+  public <T> T getOrderEventPayload(String payload, Class<T> outputType) {
+    try {
+      return objectMapper.readValue(payload, outputType);
+    } catch (JsonProcessingException e) {
+      log.error("Could not read {} object!", outputType.getName(), e);
+      throw new OrderDomainException("Could not read " + outputType.getName() + " object!", e);
+    }
+  }
+
+  public <T, U> ListenableFutureCallback<SendResult<String, T>> getKafkaCallback(
+      String responseTopicName,
+      T avroModel,
+      U outboxMessage,
+      BiConsumer<U, OutboxStatus> outboxCallback,
+      String orderId,
+      String avroModelName) {
     return new ListenableFutureCallback<SendResult<String, T>>() {
       @Override
       public void onFailure(Throwable ex) {
         log.error(
-            "Error while sending {} message {} to topic {}",
+            "Error while sending {} with message: {} and outbox type: {} to topic {}",
             avroModelName,
             avroModel.toString(),
+            outboxMessage.getClass().getName(),
             responseTopicName,
             ex);
+        outboxCallback.accept(outboxMessage, OutboxStatus.FAILED);
       }
 
       @Override
@@ -34,6 +61,7 @@ public class KafkaMessageHelper {
             metadata.partition(),
             metadata.offset(),
             metadata.timestamp());
+        outboxCallback.accept(outboxMessage, OutboxStatus.COMPLETED);
       }
     };
   }

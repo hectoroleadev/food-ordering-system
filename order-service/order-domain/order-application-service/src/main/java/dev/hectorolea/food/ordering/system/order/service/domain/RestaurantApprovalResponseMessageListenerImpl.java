@@ -4,7 +4,6 @@ import static dev.hectorolea.food.ordering.system.order.service.domain.entity.Or
 import static java.lang.String.join;
 
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.message.RestaurantApprovalResponse;
-import dev.hectorolea.food.ordering.system.order.service.domain.event.OrderCancelledEvent;
 import dev.hectorolea.food.ordering.system.order.service.domain.ports.input.message.listener.restaurantapproval.RestaurantApprovalResponseMessageListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,11 +29,10 @@ public class RestaurantApprovalResponseMessageListenerImpl
 
   @Override
   public void orderRejected(RestaurantApprovalResponse restaurantApprovalResponse) {
-    OrderCancelledEvent domainEvent = orderApprovalSaga.rollback(restaurantApprovalResponse);
+    orderApprovalSaga.rollback(restaurantApprovalResponse);
     log.info(
-        "Publishing order cancelled event for order id: {} with failure messages: {}",
+        "Order Approval Saga rollback operation is completed for order id: {} with failure messages: {}",
         restaurantApprovalResponse.getOrderId(),
         join(FAILURE_MESSAGE_DELIMITER, restaurantApprovalResponse.getFailureMessages()));
-    domainEvent.fire();
   }
 }

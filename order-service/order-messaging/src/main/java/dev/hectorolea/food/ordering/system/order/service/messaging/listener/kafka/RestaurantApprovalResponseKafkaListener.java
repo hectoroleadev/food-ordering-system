@@ -1,15 +1,16 @@
 package dev.hectorolea.food.ordering.system.order.service.messaging.listener.kafka;
 
 import static dev.hectorolea.food.ordering.system.order.service.domain.entity.Order.FAILURE_MESSAGE_DELIMITER;
-import static java.lang.String.join;
 
 import dev.hectorolea.food.ordering.system.kafka.consumer.KafkaConsumer;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.OrderApprovalStatus;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantApprovalResponseAvroModel;
+import dev.hectorolea.food.ordering.system.order.service.domain.exception.OrderNotFoundException;
 import dev.hectorolea.food.ordering.system.order.service.domain.ports.input.message.listener.restaurantapproval.RestaurantApprovalResponseMessageListener;
 import dev.hectorolea.food.ordering.system.order.service.messaging.mapper.OrderMessagingDataMapper;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -49,25 +50,38 @@ public class RestaurantApprovalResponseKafkaListener
 
     messages.forEach(
         restaurantApprovalResponseAvroModel -> {
-          if (OrderApprovalStatus.APPROVED
-              == restaurantApprovalResponseAvroModel.getOrderApprovalStatus()) {
-            log.info(
-                "Processing approved order for order id: {}",
+          try {
+            if (OrderApprovalStatus.APPROVED
+                == restaurantApprovalResponseAvroModel.getOrderApprovalStatus()) {
+              log.info(
+                  "Processing approved order for order id: {}",
+                  restaurantApprovalResponseAvroModel.getOrderId());
+              restaurantApprovalResponseMessageListener.orderApproved(
+                  orderMessagingDataMapper.approvalResponseAvroModelToApprovalResponse(
+                      restaurantApprovalResponseAvroModel));
+            } else if (OrderApprovalStatus.REJECTED
+                == restaurantApprovalResponseAvroModel.getOrderApprovalStatus()) {
+              log.info(
+                  "Processing rejected order for order id: {}, with failure messages: {}",
+                  restaurantApprovalResponseAvroModel.getOrderId(),
+                  String.join(
+                      FAILURE_MESSAGE_DELIMITER,
+                      restaurantApprovalResponseAvroModel.getFailureMessages()));
+              restaurantApprovalResponseMessageListener.orderRejected(
+                  orderMessagingDataMapper.approvalResponseAvroModelToApprovalResponse(
+                      restaurantApprovalResponseAvroModel));
+            }
+          } catch (OptimisticLockingFailureException e) {
+            // NO-OP for optimistic lock. This means another thread finished the work, do not throw
+            // error to prevent reading the data from kafka again!
+            log.error(
+                "Caught optimistic locking exception in RestaurantApprovalResponseKafkaListener for order id: {}",
                 restaurantApprovalResponseAvroModel.getOrderId());
-            restaurantApprovalResponseMessageListener.orderApproved(
-                orderMessagingDataMapper.approvalResponseAvroModelToApprovalResponse(
-                    restaurantApprovalResponseAvroModel));
-          } else if (OrderApprovalStatus.REJECTED
-              == restaurantApprovalResponseAvroModel.getOrderApprovalStatus()) {
-            log.info(
-                "Processing rejected order for order id: {}, with failure messages: {}",
-                restaurantApprovalResponseAvroModel.getOrderId(),
-                join(
-                    FAILURE_MESSAGE_DELIMITER,
-                    restaurantApprovalResponseAvroModel.getFailureMessages()));
-            restaurantApprovalResponseMessageListener.orderRejected(
-                orderMessagingDataMapper.approvalResponseAvroModelToApprovalResponse(
-                    restaurantApprovalResponseAvroModel));
+          } catch (OrderNotFoundException e) {
+            // NO-OP for OrderNotFoundException
+            log.error(
+                "No order found for order id: {}",
+                restaurantApprovalResponseAvroModel.getOrderId());
           }
         });
   }

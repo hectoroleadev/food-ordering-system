@@ -1,7 +1,6 @@
 package dev.hectorolea.food.ordering.system.restaurant.service.messaging.mapper;
 
 import static java.util.UUID.randomUUID;
-import static java.util.stream.Collectors.toList;
 
 import dev.hectorolea.food.ordering.system.domain.valueobject.ProductId;
 import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantOrderStatus;
@@ -10,44 +9,13 @@ import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantAppr
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantApprovalResponseAvroModel;
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.dto.RestaurantApprovalRequest;
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.entity.Product;
-import dev.hectorolea.food.ordering.system.restaurant.service.domain.event.OrderApprovedEvent;
-import dev.hectorolea.food.ordering.system.restaurant.service.domain.event.OrderRejectedEvent;
+import dev.hectorolea.food.ordering.system.restaurant.service.domain.outbox.model.OrderEventPayload;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RestaurantMessagingDataMapper {
-  public RestaurantApprovalResponseAvroModel
-      orderApprovedEventToRestaurantApprovalResponseAvroModel(
-          OrderApprovedEvent orderApprovedEvent) {
-    return RestaurantApprovalResponseAvroModel.newBuilder()
-        .setId(randomUUID().toString())
-        .setSagaId("")
-        .setOrderId(orderApprovedEvent.getOrderApproval().getOrderId().getValue().toString())
-        .setRestaurantId(orderApprovedEvent.getRestaurantId().getValue().toString())
-        .setCreatedAt(orderApprovedEvent.getCreatedAt().toInstant())
-        .setOrderApprovalStatus(
-            OrderApprovalStatus.valueOf(
-                orderApprovedEvent.getOrderApproval().getApprovalStatus().name()))
-        .setFailureMessages(orderApprovedEvent.getFailureMessages())
-        .build();
-  }
-
-  public RestaurantApprovalResponseAvroModel
-      orderRejectedEventToRestaurantApprovalResponseAvroModel(
-          OrderRejectedEvent orderRejectedEvent) {
-    return RestaurantApprovalResponseAvroModel.newBuilder()
-        .setId(randomUUID().toString())
-        .setSagaId("")
-        .setOrderId(orderRejectedEvent.getOrderApproval().getOrderId().getValue().toString())
-        .setRestaurantId(orderRejectedEvent.getRestaurantId().getValue().toString())
-        .setCreatedAt(orderRejectedEvent.getCreatedAt().toInstant())
-        .setOrderApprovalStatus(
-            OrderApprovalStatus.valueOf(
-                orderRejectedEvent.getOrderApproval().getApprovalStatus().name()))
-        .setFailureMessages(orderRejectedEvent.getFailureMessages())
-        .build();
-  }
 
   public RestaurantApprovalRequest restaurantApprovalRequestAvroModelToRestaurantApproval(
       RestaurantApprovalRequestAvroModel restaurantApprovalRequestAvroModel) {
@@ -67,9 +35,23 @@ public class RestaurantMessagingDataMapper {
                             .productId(new ProductId(UUID.fromString(avroModel.getId())))
                             .quantity(avroModel.getQuantity())
                             .build())
-                .collect(toList()))
+                .collect(Collectors.toList()))
         .price(restaurantApprovalRequestAvroModel.getPrice())
         .createdAt(restaurantApprovalRequestAvroModel.getCreatedAt())
+        .build();
+  }
+
+  public RestaurantApprovalResponseAvroModel orderEventPayloadToRestaurantApprovalResponseAvroModel(
+      String sagaId, OrderEventPayload orderEventPayload) {
+    return RestaurantApprovalResponseAvroModel.newBuilder()
+        .setId(randomUUID().toString())
+        .setSagaId(sagaId)
+        .setOrderId(orderEventPayload.getOrderId())
+        .setRestaurantId(orderEventPayload.getRestaurantId())
+        .setCreatedAt(orderEventPayload.getCreatedAt().toInstant())
+        .setOrderApprovalStatus(
+            OrderApprovalStatus.valueOf(orderEventPayload.getOrderApprovalStatus()))
+        .setFailureMessages(orderEventPayload.getFailureMessages())
         .build();
   }
 }

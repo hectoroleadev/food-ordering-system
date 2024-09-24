@@ -4,7 +4,6 @@ import static dev.hectorolea.food.ordering.system.domain.DomainConstants.UTC;
 import static java.time.ZoneId.of;
 import static java.time.ZonedDateTime.now;
 
-import dev.hectorolea.food.ordering.system.domain.event.publisher.DomainEventPublisher;
 import dev.hectorolea.food.ordering.system.domain.valueobject.Money;
 import dev.hectorolea.food.ordering.system.domain.valueobject.PaymentStatus;
 import dev.hectorolea.food.ordering.system.payment.service.domain.entity.CreditEntry;
@@ -28,9 +27,7 @@ public class PaymentDomainServiceImpl implements PaymentDomainService {
       Payment payment,
       CreditEntry creditEntry,
       List<CreditHistory> creditHistories,
-      List<String> failureMessages,
-      DomainEventPublisher<PaymentCompletedEvent> paymentCompletedEventDomainEventPublisher,
-      DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
+      List<String> failureMessages) {
     payment.validatePayment(failureMessages);
     payment.initializePayment();
     validateCreditEntry(payment, creditEntry, failureMessages);
@@ -41,16 +38,11 @@ public class PaymentDomainServiceImpl implements PaymentDomainService {
     if (failureMessages.isEmpty()) {
       log.info("Payment is initiated for order id: {}", payment.getOrderId().getValue());
       payment.updateStatus(PaymentStatus.COMPLETED);
-      return new PaymentCompletedEvent(
-          payment, now(of(UTC)), paymentCompletedEventDomainEventPublisher);
+      return new PaymentCompletedEvent(payment, now(of(UTC)));
     } else {
       log.info("Payment initiation is failed for order id: {}", payment.getOrderId().getValue());
       payment.updateStatus(PaymentStatus.FAILED);
-      return new PaymentFailedEvent(
-          payment,
-          now(of(UTC)),
-          failureMessages,
-          paymentFailedEventDomainEventPublisher);
+      return new PaymentFailedEvent(payment, now(of(UTC)), failureMessages);
     }
   }
 
@@ -59,9 +51,7 @@ public class PaymentDomainServiceImpl implements PaymentDomainService {
       Payment payment,
       CreditEntry creditEntry,
       List<CreditHistory> creditHistories,
-      List<String> failureMessages,
-      DomainEventPublisher<PaymentCancelledEvent> paymentCancelledEventDomainEventPublisher,
-      DomainEventPublisher<PaymentFailedEvent> paymentFailedEventDomainEventPublisher) {
+      List<String> failureMessages) {
     payment.validatePayment(failureMessages);
     addCreditEntry(payment, creditEntry);
     updateCreditHistory(payment, creditHistories, TransactionType.CREDIT);
@@ -69,16 +59,11 @@ public class PaymentDomainServiceImpl implements PaymentDomainService {
     if (failureMessages.isEmpty()) {
       log.info("Payment is cancelled for order id: {}", payment.getOrderId().getValue());
       payment.updateStatus(PaymentStatus.CANCELLED);
-      return new PaymentCancelledEvent(
-          payment, now(of(UTC)), paymentCancelledEventDomainEventPublisher);
+      return new PaymentCancelledEvent(payment, now(of(UTC)));
     } else {
       log.info("Payment cancellation is failed for order id: {}", payment.getOrderId().getValue());
       payment.updateStatus(PaymentStatus.FAILED);
-      return new PaymentFailedEvent(
-          payment,
-          now(of(UTC)),
-          failureMessages,
-          paymentFailedEventDomainEventPublisher);
+      return new PaymentFailedEvent(payment, now(of(UTC)), failureMessages);
     }
   }
 

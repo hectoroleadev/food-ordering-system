@@ -10,6 +10,8 @@ import dev.hectorolea.food.ordering.system.restaurant.service.domain.dto.Restaur
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.entity.OrderDetail;
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.entity.Product;
 import dev.hectorolea.food.ordering.system.restaurant.service.domain.entity.Restaurant;
+import dev.hectorolea.food.ordering.system.restaurant.service.domain.event.OrderApprovalEvent;
+import dev.hectorolea.food.ordering.system.restaurant.service.domain.outbox.model.OrderEventPayload;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +39,17 @@ public class RestaurantDataMapper {
                     OrderStatus.valueOf(
                         restaurantApprovalRequest.getRestaurantOrderStatus().name()))
                 .build())
+        .build();
+  }
+
+  public OrderEventPayload orderApprovalEventToOrderEventPayload(
+      OrderApprovalEvent orderApprovalEvent) {
+    return OrderEventPayload.builder()
+        .orderId(orderApprovalEvent.getOrderApproval().getOrderId().getValue().toString())
+        .restaurantId(orderApprovalEvent.getRestaurantId().getValue().toString())
+        .orderApprovalStatus(orderApprovalEvent.getOrderApproval().getApprovalStatus().name())
+        .createdAt(orderApprovalEvent.getCreatedAt())
+        .failureMessages(orderApprovalEvent.getFailureMessages())
         .build();
   }
 }

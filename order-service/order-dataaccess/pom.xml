@@ -35,6 +35,10 @@
             <groupId>dev.hectorolea.food.ordering.system</groupId>
             <artifactId>common-dataaccess</artifactId>
         </dependency>
+        <dependency>
+            <groupId>dev.hectorolea.food.ordering.system</groupId>
+            <artifactId>outbox</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
