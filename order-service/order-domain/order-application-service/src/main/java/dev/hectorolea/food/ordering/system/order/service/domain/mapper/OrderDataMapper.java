@@ -1,5 +1,6 @@
 package dev.hectorolea.food.ordering.system.order.service.domain.mapper;
 
+import static java.util.UUID.fromString;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 
@@ -12,7 +13,9 @@ import dev.hectorolea.food.ordering.system.domain.valueobject.RestaurantOrderSta
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.CreateOrderCommand;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.CreateOrderResponse;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.create.OrderAddress;
+import dev.hectorolea.food.ordering.system.order.service.domain.dto.message.CustomerModel;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.track.TrackOrderResponse;
+import dev.hectorolea.food.ordering.system.order.service.domain.entity.Customer;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.Order;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.OrderItem;
 import dev.hectorolea.food.ordering.system.order.service.domain.entity.Product;
@@ -106,6 +109,14 @@ public class OrderDataMapper {
         .price(orderPaidEvent.getOrder().getPrice().getAmount())
         .createdAt(orderPaidEvent.getCreatedAt())
         .build();
+  }
+
+  public Customer customerModelToCustomer(CustomerModel customerModel) {
+    return new Customer(
+        new CustomerId(fromString(customerModel.getId())),
+        customerModel.getUsername(),
+        customerModel.getFirstName(),
+        customerModel.getLastName());
   }
 
   private List<OrderItem> orderItemsToOrderItemEntities(

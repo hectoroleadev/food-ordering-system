@@ -2,12 +2,14 @@ package dev.hectorolea.food.ordering.system.order.service.messaging.mapper;
 
 import static java.util.UUID.randomUUID;
 
+import dev.hectorolea.food.ordering.system.kafka.order.avro.model.CustomerAvroModel;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.PaymentOrderStatus;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.PaymentRequestAvroModel;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.PaymentResponseAvroModel;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantApprovalRequestAvroModel;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantApprovalResponseAvroModel;
 import dev.hectorolea.food.ordering.system.kafka.order.avro.model.RestaurantOrderStatus;
+import dev.hectorolea.food.ordering.system.order.service.domain.dto.message.CustomerModel;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.message.PaymentResponse;
 import dev.hectorolea.food.ordering.system.order.service.domain.dto.message.RestaurantApprovalResponse;
 import dev.hectorolea.food.ordering.system.order.service.domain.outbox.model.approval.OrderApprovalEventPayload;
@@ -85,6 +87,15 @@ public class OrderMessagingDataMapper {
                 .collect(Collectors.toList()))
         .setPrice(orderApprovalEventPayload.getPrice())
         .setCreatedAt(orderApprovalEventPayload.getCreatedAt().toInstant())
+        .build();
+  }
+
+  public CustomerModel customerAvroModeltoCustomerModel(CustomerAvroModel customerAvroModel) {
+    return CustomerModel.builder()
+        .id(customerAvroModel.getId())
+        .username(customerAvroModel.getUsername())
+        .firstName(customerAvroModel.getFirstName())
+        .lastName(customerAvroModel.getLastName())
         .build();
   }
 }
